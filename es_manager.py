@@ -102,3 +102,26 @@ class ElasticsearchSnapshotManager:
 
             # Make the request to create/update the repo. Can't use create_repository() as it tries to create the S3 bucket itself
             conn.perform_request('PUT', '/_snapshot/%s' % self.repository, body=json.dumps(repo_settings), timeout=300)
+
+    def fs_repo(self):
+        if self.success:
+            # Get snapshot client handler
+            self.sh = self.es.snapshot
+
+            conn = self.es.transport.get_connection()
+
+            logger.info('Creating/Updating repository %s' % self.repository)
+
+            repo_settings = {
+                "type": "fs",
+                "settings": {
+                    "bucket":                       self.bucket,
+                    "region":                       self.region,
+                    "compress":                     True,
+                    "base_path":                    '/usr/local/elk/elasticsearch/data/repository',
+                    "max_restore_bytes_per_sec":    '50mb',
+                    "max_snapshot_bytes_per_sec":   '50mb'
+                }
+            }
+
+            conn.perform_request('PUT', '/_snapshot/%s' % self.repository, body=json.dumps(repo_settings), timeout=300)

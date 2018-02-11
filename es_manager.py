@@ -53,7 +53,7 @@ class ElasticsearchSnapshotManager:
             self.password = None
 
         self.connect()
-        self.s3_repo()
+        self.fs_repo()
 
     def connect(self):
         counter = 0

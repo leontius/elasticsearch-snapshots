@@ -22,7 +22,7 @@ def get_parser(description):
     parser.add_argument("--eshost", action="store", default="localhost", help="Elasticsearch host")
     parser.add_argument("--esport", action="store", default=9200, help="Elasticsearch port")
     parser.add_argument("--esproto", action="store", default="http", help="Protocol to use when talking to ES (default: http)")
-    parser.add_argument("--esauthcfg", action="store", default="/etc/default/elasticsearch-snapshots", help="Configuration file that contains credentials to auth against ES")
+    parser.add_argument("--esauthcfg", action="store", default="/opt/elasticsearch-snapshots/esauthcfg", help="Configuration file that contains credentials to auth against ES")
 
     return parser
 
@@ -72,6 +72,7 @@ class ElasticsearchSnapshotManager:
         while True:
             try:
                 self.es = Elasticsearch([url])
+                logger.info(url)
                 self.es.cluster.health(wait_for_status='green', request_timeout=20)
                 self.success = True
                 break

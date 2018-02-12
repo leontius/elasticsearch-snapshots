@@ -6,7 +6,9 @@ from elasticsearch import exceptions
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO)
+fs = logging.FileHandler('/var/log/es_backup.log')
 logger = logging.getLogger('elasticsearch')
+logger.addHandler(fs)
 
 def take_snapshot(options):
     esm = ElasticsearchSnapshotManager(options)

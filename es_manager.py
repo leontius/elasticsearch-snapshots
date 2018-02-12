@@ -149,4 +149,4 @@ class ElasticsearchSnapshotManager:
                 logger.info('Delete indices %s' % index_name)
             except exceptions.TransportError as e:
                 logger.error(e.info)
-                pass
+                exit(1)

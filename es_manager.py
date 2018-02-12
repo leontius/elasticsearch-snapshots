@@ -1,5 +1,6 @@
 import time, logging, argparse, json, sys
 from elasticsearch import Elasticsearch, exceptions
+from datetime import datetime, timedelta
 
 MAX_ATTEMPTS = 10
 
@@ -10,8 +11,8 @@ def get_parser(description):
     parser = argparse.ArgumentParser(description=description)
 
     required_group = parser.add_argument_group("required arguments")
-    required_group.add_argument("--bucket", action="store", required=True, help="Bucket name where snapshots are stored")
-    required_group.add_argument("--prefix", action="store", required=True, help="Path within S3 bucket for the backups to be stored")
+    required_group.add_argument("--bucket", action="store", required=False, help="Bucket name where snapshots are stored")
+    required_group.add_argument("--prefix", action="store", required=False, help="Path within S3 bucket for the backups to be stored")
 
     parser.add_argument("--repository", action="store", default="backup_to", help="Repository name to use in Elasticsearch")
     parser.add_argument("--region", action="store", default="ap-southeast-2", help="S3 bucket region")
@@ -53,7 +54,11 @@ class ElasticsearchSnapshotManager:
             self.password = None
 
         self.connect()
-        self.fs_repo()
+
+        time.sleep(1)
+
+        if self.success:
+            self.sh = self.es.snapshot
 
     def connect(self):
         counter = 0
@@ -115,13 +120,31 @@ class ElasticsearchSnapshotManager:
             repo_settings = {
                 "type": "fs",
                 "settings": {
-                    "bucket":                       self.bucket,
-                    "region":                       self.region,
                     "compress":                     True,
-                    "base_path":                    '/usr/local/elk/elasticsearch/data/repository',
+                    "location":                    '/usr/local/elk/elasticsearch/data/repository',
                     "max_restore_bytes_per_sec":    '50mb',
                     "max_snapshot_bytes_per_sec":   '50mb'
                 }
             }
 
             conn.perform_request('PUT', '/_snapshot/%s' % self.repository, body=json.dumps(repo_settings), timeout=300)
+
+    def delete_before_7_day_index(self, index_name='logstash-'):
+        if self.success:
+            # Get indices client handler
+            self.indices = self.es.indices
+
+            d = datetime.now()
+            d1 = d + timedelta(days=-7)
+            before_7d = d1.strftime('%Y.%m.%d')
+
+            logger.debug('before 7 day %s' % before_7d)
+
+            index_name = index_name + before_7d
+
+            try:
+                self.indices.delete(index_name)
+                logger.info('Delete indices %s' % index_name)
+            except exceptions.TransportError as e:
+                logger.error(e.info)
+                pass

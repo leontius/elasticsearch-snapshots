@@ -11,7 +11,7 @@ def take_snapshot(options):
     esm = ElasticsearchSnapshotManager(options)
     sh = esm.sh
 
-    snapshot = options.snapshot and options.snapshot or 'all_' + time.strftime('%Y%m%d%H')
+    snapshot = options.snapshot and options.snapshot or 'backup_' + time.strftime('%Y%m%d%H')
 
     snapdef = {
         "include_global_state": True
@@ -19,8 +19,13 @@ def take_snapshot(options):
 
     if options.indices:
         snapdef['indices'] = ','.join(options.indices)
+    else:
+        snapdef['indices'] = 'logstash-' + time.strftime('%Y.%m.%d')
 
     try:
+        # Delete before 7 day index
+        esm.delete_before_7_day_index()
+
         sh.create(repository=options.repository, snapshot=snapshot, body=json.dumps(snapdef), wait_for_completion=options.wait, request_timeout=7200)
 
         # Housekeeping - delete old snapshots

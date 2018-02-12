@@ -143,6 +143,7 @@ class ElasticsearchSnapshotManager:
             index_name = index_name + before_7d
 
             try:
+                self.indices.get(index_name)
                 self.indices.delete(index_name)
                 logger.info('Delete indices %s' % index_name)
             except exceptions.TransportError as e:

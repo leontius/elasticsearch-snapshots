@@ -3,6 +3,7 @@
 import time, logging, argparse, json, sys
 from es_manager import ElasticsearchSnapshotManager, get_parser
 from elasticsearch import exceptions
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('elasticsearch')
@@ -20,7 +21,9 @@ def take_snapshot(options):
     if options.indices:
         snapdef['indices'] = ','.join(options.indices)
     else:
-        snapdef['indices'] = 'logstash-' + time.strftime('%Y.%m.%d')
+        d = datetime.now()
+        d1 = d + timedelta(days=-1)
+        snapdef['indices'] = 'logstash-' + d1.strftime('%Y.%m.%d')
 
     try:
         # Delete before 7 day index
